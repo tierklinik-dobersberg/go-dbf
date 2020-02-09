@@ -36,6 +36,7 @@ func (fd FieldDescriptor) usesDecimalPlaces() bool {
 // A dBase data type, as per https://www.dbase.com/Knowledgebase/INT/db7_file_fmt.htm, under heading "Storage of dBASE Data Types".
 type DbaseDataType byte
 
+// All supported DBase data types
 const (
 	Character DbaseDataType = 'C'
 	Logical   DbaseDataType = 'L'
@@ -44,8 +45,21 @@ const (
 	Float     DbaseDataType = 'F'
 )
 
-func (ddt DbaseDataType) byte() byte {
-	return byte(ddt)
+func (ddt DbaseDataType) String() string {
+	switch ddt {
+	case Character:
+		return "character"
+	case Logical:
+		return "logical"
+	case Date:
+		return "date"
+	case Numeric:
+		return "numeric"
+	case Float:
+		return "float"
+	}
+
+	panic("invalid dbase data type " + string(ddt))
 }
 
 const notApplicable = 0x00

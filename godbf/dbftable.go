@@ -75,7 +75,7 @@ func New(encoding string) (table *DbfTable) {
 	dt.updateDay = byte(time.Now().Day())
 	dt.numberOfRecords = 0
 	dt.numberOfBytesInHeader = 32
-	dt.lengthOfEachRecord = 0
+	dt.lengthOfEachRecord = 1 // for the deletion marker
 
 	// create fieldMap to translate field name to index
 	dt.fieldMap = make(map[string]int)
@@ -183,7 +183,7 @@ func (dt *DbfTable) addField(fieldName string, fieldType DbaseDataType, length b
 	// N (Numeric)    - . 0 1 2 3 4 5 6 7 8 9
 	// F (Floating Point)   - . 0 1 2 3 4 5 6 7 8 9
 	// L (Logical)    ? Y y N n T t F f (? when not initialized).
-	df.fieldStore[11] = df.fieldType.byte()
+	df.fieldStore[11] = byte(df.fieldType)
 
 	// fixedFieldLength of field
 	df.fieldStore[16] = df.length

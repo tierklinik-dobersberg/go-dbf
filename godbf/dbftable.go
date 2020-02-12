@@ -438,14 +438,23 @@ func (dt *DbfTable) fillFieldWithBlanks(fieldLength int, offset int, recordOffse
 //FieldValue returns the content for the record at the given row and field index as a string
 // If the row or field index is invalid, an error is returned .
 func (dt *DbfTable) FieldValue(row int, fieldIndex int) (value string) {
+	temp := dt.RawFieldValue(row, fieldIndex)
 
+	s := dt.decoder.ConvertString(string(temp))
+
+	value = strings.TrimSpace(s)
+	return
+}
+
+// RawFieldValue returns the raw value from the row field at fieldIndex
+// This function does not apply any encoding transformations
+func (dt *DbfTable) RawFieldValue(row int, fieldIndex int) []byte {
 	offset := int(dt.numberOfBytesInHeader)
 	lengthOfRecord := int(dt.lengthOfEachRecord)
 
 	offset = offset + (row * lengthOfRecord)
 
 	recordOffset := 1
-
 	for i := 0; i < len(dt.fields); i++ {
 		if i == fieldIndex {
 			break
@@ -454,19 +463,9 @@ func (dt *DbfTable) FieldValue(row int, fieldIndex int) (value string) {
 		}
 	}
 
-	temp := dt.dataStore[(offset + recordOffset):((offset + recordOffset) + int(dt.fields[fieldIndex].length))]
-
-	enforceBlankPadding(temp)
-
-	s := dt.decoder.ConvertString(string(temp))
-	//fmt.Printf("utf-8 value:[%#v] original value:[%#v]\n", s, string(temp))
-
-	value = strings.TrimSpace(s)
-
-	//fmt.Printf("raw value:[%#v]\n", dt.dataStore[(offset + recordOffset):((offset + recordOffset) + int(dt.Fields[fieldIndex].fixedFieldLength))])
-	//fmt.Printf("utf-8 value:[%#v]\n", []byte(s))
-	//value = string(dt.dataStore[(offset + recordOffset):((offset + recordOffset) + int(dt.Fields[fieldIndex].fixedFieldLength))])
-	return
+	field := dt.dataStore[(offset + recordOffset):((offset + recordOffset) + int(dt.fields[fieldIndex].length))]
+	enforceBlankPadding(field)
+	return field
 }
 
 // Some Dbf encoders pad with null chars instead of blanks, this forces blanks as per
@@ -518,4 +517,23 @@ func (dt *DbfTable) GetRowAsSlice(row int) []string {
 	}
 
 	return s
+}
+
+// GetRawRowSlice returns all record values form the specified row. It does not
+// apply any encoding transformation
+func (dt *DbfTable) GetRawRowSlice(rowIdx int) [][]byte {
+	fields := dt.Fields()
+
+	s := make([][]byte, len(fields))
+
+	for i := 0; i < len(fields); i++ {
+		s[i] = dt.RawFieldValue(rowIdx, i)
+	}
+
+	return s
+}
+
+func (dt *DbfTable) decodePaddedString(val []byte) string {
+	decoded := dt.decoder.ConvertString(string(val))
+	return strings.TrimSpace(decoded)
 }

@@ -6,11 +6,13 @@ import (
 )
 
 type testStruct struct {
-	Bool   bool      `dbf:"bool"`
-	Date   time.Time `dbf:"date"`
-	Float  float64   `dbf:"float"`
-	Number int       `dbf:"number"`
-	Text   string    `dbf:"text"`
+	Bool    bool      `dbf:"bool"`
+	BoolPtr *bool     `dbf:"bool"`
+	Date    time.Time `dbf:"date"`
+	Float   float64   `dbf:"float"`
+	Number  int       `dbf:"number"`
+	UNumber uint64    `dbf:"number"`
+	Text    string    `dbf:"text"`
 }
 
 func TestParseToStruct(t *testing.T) {
@@ -38,15 +40,19 @@ func TestParseToStruct(t *testing.T) {
 	assertNoError(tableUnderTest.SetFieldValueByName(recordIdx, "text", "some text!"))
 
 	var target testStruct
-	err := tableUnderTest.parseRowInto(recordIdx, &target, true)
+	err := tableUnderTest.DecodeRow(recordIdx, &target, true)
 	assertNoError(err)
 
 	if target.Bool != true {
 		t.Errorf("invalid boolean")
 	}
 
+	if target.BoolPtr == nil || *target.BoolPtr != true {
+		t.Errorf("invalid boolean")
+	}
+
 	if year, month, day := target.Date.Date(); year != 2020 || month != time.February || day != 9 {
-		t.Errorf("invalid date")
+		t.Errorf("invalid date: %s", target.Date)
 	}
 
 	if target.Float != 1.4 {
@@ -55,6 +61,10 @@ func TestParseToStruct(t *testing.T) {
 
 	if target.Number != 100 {
 		t.Errorf("invalid number")
+	}
+
+	if target.UNumber != 100 {
+		t.Errorf("invalid unumber")
 	}
 
 	if target.Text != "some text!" {
